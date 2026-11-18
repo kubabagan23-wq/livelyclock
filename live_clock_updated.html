@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Live Clock</title>
+  <style>
+    :root {
+      --background: #514545;
+      --foreground: #FFFFFF;
+      --muted: rgba(255,255,255,.76);
+      --control: rgba(0,0,0,.18);
+      --control-border: rgba(255,255,255,.32);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100%; margin: 0; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .toolbar {
+      position: fixed;
+      top: 20px;
+      right: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    select {
+      appearance: none;
+      color: white;
+      background-color: var(--control);
+      border: 1px solid var(--control-border);
+      border-radius: 9px;
+      padding: 8px 28px 8px 10px;
+      font: inherit;
+      font-size: 13px;
+      letter-spacing: normal;
+      text-transform: none;
+      cursor: pointer;
+      outline-offset: 3px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+    }
+    select option { color: #222; background: white; }
+    main {
+      width: 100%;
+      padding: 24px;
+      text-align: center;
+    }
+    #time {
+      margin: 0;
+      font-size: clamp(3.5rem, 15vw, 12rem);
+      line-height: 1;
+      font-weight: 300;
+      letter-spacing: -.065em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #date {
+      margin: 26px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2.5vw, 1.55rem);
+      font-weight: 400;
+      letter-spacing: .04em;
+    }
+    #zone {
+      margin: 12px 0 0;
+      color: rgba(255,255,255,.58);
+      font-size: .85rem;
+      letter-spacing: .08em;
+    }
+    @media (max-width: 560px) {
+      .toolbar { top: 14px; right: 12px; gap: 7px; }
+      .control { gap: 5px; }
+      .control label { display: none; }
+      select { padding: 8px 25px 8px 8px; font-size: 12px; }
+      main { padding: 16px; }
+      #time { font-size: clamp(2.8rem, 13vw, 5.2rem); letter-spacing: -.055em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="control">
+      <label for="clock-format" id="format-label">Clock</label>
+      <select id="clock-format" aria-label="Choose 12 or 24 hour clock">
+        <option value="12">12 hour</option>
+        <option value="24" selected>24 hour</option>
+      </select>
+    </div>
+    <div class="control">
+      <label for="language" id="language-label">Language</label>
+      <select id="language" aria-label="Choose language">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="fr">Français</option>
+        <option value="pl">Polski</option>
+        <option value="de">Deutsch</option>
+        <option value="zh">中文</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ru">Русский</option>
+        <option value="uk">Українська</option>
+        <option value="pt">Português</option>
+        <option value="ja">日本語</option>
+        <option value="ar">العربية</option>
+        <option value="ko">한국어</option>
+      </select>
+    </div>
+  </div>
+
+  <main>
+    <h1 id="time" aria-live="off">00:00:00</h1>
+    <p id="date">Wednesday, November 18, 2026</p>
+    <p id="zone"></p>
+  </main>
+
+  <script>
+    const languages = {
+      en: { locale: "en-US", language: "Language", clock: "Clock" },
+      es: { locale: "es-ES", language: "Idioma", clock: "Reloj" },
+      it: { locale: "it-IT", language: "Lingua", clock: "Orologio" },
+      fr: { locale: "fr-FR", language: "Langue", clock: "Horloge" },
+      pl: { locale: "pl-PL", language: "Język", clock: "Zegar" },
+      de: { locale: "de-DE", language: "Sprache", clock: "Uhr" },
+      zh: { locale: "zh-CN", language: "语言", clock: "时钟" },
+      hi: { locale: "hi-IN", language: "भाषा", clock: "घड़ी" },
+      ru: { locale: "ru-RU", language: "Язык", clock: "Часы" },
+      uk: { locale: "uk-UA", language: "Мова", clock: "Годинник" },
+      pt: { locale: "pt-PT", language: "Idioma", clock: "Relógio" },
+      ja: { locale: "ja-JP", language: "言語", clock: "時計" },
+      ar: { locale: "ar", language: "اللغة", clock: "الساعة" },
+      ko: { locale: "ko-KR", language: "언어", clock: "시계" }
+    };
+
+    const timeElement = document.getElementById("time");
+    const dateElement = document.getElementById("date");
+    const zoneElement = document.getElementById("zone");
+    const languageSelect = document.getElementById("language");
+    const clockFormatSelect = document.getElementById("clock-format");
+    const languageLabel = document.getElementById("language-label");
+    const formatLabel = document.getElementById("format-label");
+
+    function updateClock() {
+      const now = new Date();
+      const selected = languages[languageSelect.value] || languages.en;
+      const locale = selected.locale;
+      const use12Hour = clockFormatSelect.value === "12";
+
+      timeElement.textContent = new Intl.DateTimeFormat(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: use12Hour
+      }).format(now);
+
+      dateElement.textContent = new Intl.DateTimeFormat(locale, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      }).format(now);
+
+      zoneElement.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      languageLabel.textContent = selected.language;
+      formatLabel.textContent = selected.clock;
+      document.documentElement.lang = languageSelect.value;
+      document.documentElement.dir = languageSelect.value === "ar" ? "rtl" : "ltr";
+    }
+
+    languageSelect.addEventListener("change", updateClock);
+    clockFormatSelect.addEventListener("change", updateClock);
+    updateClock();
+    setInterval(updateClock, 1000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) updateClock();
+    });
+  </script>
+</body>
+</html>
